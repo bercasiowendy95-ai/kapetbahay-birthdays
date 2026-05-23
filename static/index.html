@@ -339,6 +339,130 @@
       .bottom-sheet, .sheet-overlay { display: block; }
       .bottom-sheet { display: block; }
     }
+
+    /* ── This week banner ── */
+    .week-banner {
+      max-width: 1120px;
+      margin: 14px auto 0;
+      padding: 0 18px;
+    }
+    .week-banner-inner {
+      background: linear-gradient(135deg,#2d5940,#6d28d9);
+      border-radius: 16px;
+      padding: 13px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: white;
+    }
+    .week-banner-label {
+      font-size: .8rem;
+      font-weight: 700;
+      white-space: nowrap;
+      opacity: .9;
+    }
+    .week-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .week-chip {
+      background: rgba(255,255,255,.2);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .week-chip:hover { background: rgba(255,255,255,.35); }
+    .week-chip.today-chip { background: rgba(255,255,255,.35); }
+
+    /* ── Milestone badge ── */
+    .milestone-badge {
+      display: inline-block;
+      background: linear-gradient(135deg,#f59e0b,#ef4444);
+      color: white;
+      font-size: .68rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 6px;
+      vertical-align: middle;
+      animation: pop .4s ease;
+    }
+    @keyframes pop { 0%{transform:scale(0)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
+
+    /* ── Share button ── */
+    .share-btn {
+      background: none;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: .76rem;
+      font-weight: 600;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all .2s;
+      margin-left: 6px;
+    }
+    .share-btn:hover { border-color: #3d6b4f; color: #3d6b4f; }
+
+    /* ── Wishes wall ── */
+    .wishes-section {
+      margin-top: 10px;
+      border-top: 1px solid #f3f4f6;
+      padding-top: 10px;
+    }
+    .wishes-title {
+      font-size: .78rem;
+      font-weight: 700;
+      color: #6d28d9;
+      margin-bottom: 8px;
+    }
+    .wish-item {
+      background: #f9fafb;
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      font-size: .82rem;
+    }
+    .wish-author {
+      font-weight: 700;
+      color: #3d6b4f;
+      margin-bottom: 2px;
+      font-size: .78rem;
+    }
+    .wish-message { color: #374151; }
+    .wish-form {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .wish-form input {
+      flex: 1;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 9px;
+      padding: 7px 11px;
+      font-size: .82rem;
+      outline: none;
+    }
+    .wish-form input:focus { border-color: #6d28d9; }
+    .wish-send-btn {
+      background: linear-gradient(135deg,#3d6b4f,#6d28d9);
+      color: white;
+      border: none;
+      border-radius: 9px;
+      padding: 7px 14px;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* ── Cake pulse animation ── */
+    @keyframes cakePulse {
+      0%,100% { transform: scale(1); }
+      50%      { transform: scale(1.3); }
+    }
+    .cake-anim { display: inline-block; animation: cakePulse 1s ease-in-out infinite; }
   </style>
 </head>
 <body>
@@ -356,6 +480,13 @@
     <div id="header-auth"></div>
   </div>
 </header>
+
+<div class="week-banner" id="week-banner" style="display:none">
+  <div class="week-banner-inner">
+    <span class="week-banner-label">🎂 Coming up:</span>
+    <div class="week-chips" id="week-chips"></div>
+  </div>
+</div>
 
 <div class="container">
   <!-- Calendar -->
@@ -645,6 +776,7 @@ function render() {
   renderSelectedPanel();
   renderUpcoming();
   renderThisMonth();
+  renderThisWeek();
   renderKapeStat();
 }
 
@@ -801,34 +933,65 @@ function renderSelectedPanel() {
   buildBdayList(list, selectedMonth, selectedDay, selectedYear);
 }
 
+function milestoneAge(birthYear, displayYear) {
+  if (!birthYear) return null;
+  const age = displayYear - birthYear;
+  return age > 0 && age % 10 === 0 ? age : null;
+}
+
 function buildBdayList(container, month, day, year) {
   const entries = allBirthdays.filter(b => b.month===month && b.day===day);
   if (!entries.length) {
     container.innerHTML = '<div class="empty-msg">No birthdays on this day yet.</div>';
     return;
   }
+  const today = new Date();
+  const isToday = month === today.getMonth()+1 && day === today.getDate()
+                  && year === today.getFullYear();
   container.innerHTML = entries.map(b => {
-    const isMine = me && b.id === me.id;
-    const age    = b.year ? `, turning ${year - b.year}` : '';
-    const reacted = sessionStorage.getItem(`reacted_${b.id}`);
+    const isMine   = me && b.id === me.id;
+    const ms       = milestoneAge(b.year, year);
+    const age      = b.year ? `, turning ${year - b.year}` : '';
+    const reacted  = sessionStorage.getItem(`reacted_${b.id}`);
+    const cakeMark = isToday ? `<span class="cake-anim">🎂</span> ` : '';
     return `
       <div class="bday-item">
         <div class="bday-avatar" style="background:${avatarGradient(b.display_name)}">
           ${b.display_name.charAt(0).toUpperCase()}
         </div>
         <div style="flex:1">
-          <div class="bday-name">${esc(b.display_name)}${isMine?` <span style="font-size:.7rem;color:#3d6b4f">(you)</span>`:''}</div>
+          <div class="bday-name">
+            ${cakeMark}${esc(b.display_name)}
+            ${isMine ? `<span style="font-size:.7rem;color:#3d6b4f">(you)</span>` : ''}
+            ${ms ? `<span class="milestone-badge">🎊 Turning ${ms}!</span>` : ''}
+          </div>
           <div class="bday-meta">${esc(b.unit)}${age}</div>
           ${b.note ? `<div class="bday-note">${esc(b.note)}</div>` : ''}
-          <button class="reaction-btn ${reacted?'reacted':''}"
-                  onclick="sendReaction(${b.id}, this)"
-                  id="rxn-${b.id}">
-            ${reacted ? '🎉' : '🎉'} ${reacted ? 'Wished!' : 'Wish Happy Birthday!'}
-            ${b.reactions ? `<span style="opacity:.7">(${b.reactions})</span>` : ''}
-          </button>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:6px">
+            <button class="reaction-btn ${reacted?'reacted':''}"
+                    onclick="sendReaction(${b.id}, this)"
+                    id="rxn-${b.id}">
+              🎉 ${reacted ? 'Wished!' : 'Wish Happy Birthday!'}
+              ${b.reactions ? `<span style="opacity:.7">(${b.reactions})</span>` : ''}
+            </button>
+            <button class="share-btn" onclick="shareEntry('${esc(b.display_name)}',${b.month},${b.day})">🔗 Share</button>
+          </div>
+          <div class="wishes-section" id="wishes-${b.id}">
+            <div class="wishes-title">💬 Birthday Wishes</div>
+            <div id="wishes-list-${b.id}"><div style="font-size:.78rem;color:#9ca3af">Loading wishes…</div></div>
+            ${me ? `
+            <div class="wish-form">
+              <input id="wish-input-${b.id}" type="text" placeholder="Leave a wish…" maxlength="120"
+                     onkeydown="if(event.key==='Enter')postWish(${b.id})"/>
+              <button class="wish-send-btn" onclick="postWish(${b.id})">Send 💌</button>
+            </div>` : `<div style="font-size:.75rem;color:#9ca3af;margin-top:4px">
+              <a href="#" onclick="openModal();return false" style="color:#6d28d9">Log in</a> to leave a wish</div>`}
+          </div>
         </div>
       </div>`;
   }).join('');
+
+  entries.forEach(b => loadWishes(b.id));
 }
 
 // ── Mobile sheet ──────────────────────────────────────────────────────────────
@@ -890,6 +1053,70 @@ function changeMonth(dir) {
   if (currentMonth < 1)  { currentMonth = 12; currentYear--; }
   renderCalendar();
   renderThisMonth();
+}
+
+// ── This week banner ──────────────────────────────────────────────────────────
+
+function renderThisWeek() {
+  const banner = document.getElementById('week-banner');
+  const chips  = document.getElementById('week-chips');
+  const today  = new Date();
+  const soon = allBirthdays.map(b => {
+    const du = daysUntil(b.month, b.day);
+    return { ...b, du };
+  }).filter(b => b.du <= 7).sort((a,b) => a.du - b.du);
+
+  if (!soon.length) { banner.style.display = 'none'; return; }
+  banner.style.display = '';
+  chips.innerHTML = soon.map(b => {
+    const label = b.du === 0 ? 'Today! 🎉' : b.du === 1 ? 'Tomorrow!' : `in ${b.du}d`;
+    return `<span class="week-chip${b.du===0?' today-chip':''}"
+              onclick="goToDate(${b.month},${b.day})">
+              ${esc(b.display_name)} · ${label}
+            </span>`;
+  }).join('');
+}
+
+// ── Wishes ────────────────────────────────────────────────────────────────────
+
+async function loadWishes(neighborId) {
+  const res = await api('GET', `/api/wishes/${neighborId}`);
+  const el  = document.getElementById(`wishes-list-${neighborId}`);
+  if (!el) return;
+  if (!res.ok || !res.data.length) {
+    el.innerHTML = '<div style="font-size:.78rem;color:#9ca3af">No wishes yet — be the first!</div>';
+    return;
+  }
+  el.innerHTML = res.data.map(w => `
+    <div class="wish-item">
+      <div class="wish-author">💚 ${esc(w.author_name)}</div>
+      <div class="wish-message">${esc(w.message)}</div>
+    </div>`).join('');
+}
+
+async function postWish(neighborId) {
+  const input = document.getElementById(`wish-input-${neighborId}`);
+  const msg   = (input?.value || '').trim();
+  if (!msg) return;
+  const res = await api('POST', `/api/wishes/${neighborId}`, { message: msg });
+  if (!res.ok) { toast(res.data?.error || 'Could not send wish', true); return; }
+  input.value = '';
+  toast('Wish sent! 💌');
+  loadWishes(neighborId);
+}
+
+// ── Share ─────────────────────────────────────────────────────────────────────
+
+async function shareEntry(name, month, day) {
+  const text = `🎂 ${name}'s birthday is on ${MONTHS[month-1]} ${day}!\nSend them a wish on Kape't Bahay Birthday Calendar:\nhttps://kapetbahay-birthdays.onrender.com`;
+  if (navigator.share) {
+    try { await navigator.share({ title: "Kape't Bahay", text }); } catch(e) {}
+  } else {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('Copied to clipboard! 📋');
+    } catch(e) { toast('Cannot share on this browser', true); }
+  }
 }
 
 // ── Reactions ─────────────────────────────────────────────────────────────────

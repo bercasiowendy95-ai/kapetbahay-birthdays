@@ -65,6 +65,15 @@ def init_db():
             )
         """)
         cur.execute("ALTER TABLE neighbors ADD COLUMN IF NOT EXISTS reactions INTEGER DEFAULT 0")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS wishes (
+                id          SERIAL PRIMARY KEY,
+                neighbor_id INTEGER NOT NULL,
+                author_name TEXT    NOT NULL,
+                message     TEXT    NOT NULL,
+                created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
         conn.commit()
     else:
         import sqlite3
@@ -80,6 +89,15 @@ def init_db():
                 note         TEXT,
                 reactions    INTEGER DEFAULT 0,
                 created_at   DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS wishes (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                neighbor_id INTEGER NOT NULL,
+                author_name TEXT    NOT NULL,
+                message     TEXT    NOT NULL,
+                created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
         conn.commit()
@@ -239,6 +257,35 @@ def react(neighbor_id):
         (neighbor_id,))
     conn.close()
     return jsonify({"count": rows[0]["reactions"] if rows else 0})
+
+
+@app.route("/api/wishes/<int:neighbor_id>")
+def get_wishes(neighbor_id):
+    conn = get_db()
+    rows = query(conn,
+        "SELECT author_name, message, created_at FROM wishes WHERE neighbor_id = ? ORDER BY created_at DESC",
+        (neighbor_id,))
+    conn.close()
+    return jsonify(rows)
+
+
+@app.route("/api/wishes/<int:neighbor_id>", methods=["POST"])
+def post_wish(neighbor_id):
+    uid = current_user()
+    if not uid:
+        return jsonify({"error": "Login to leave a wish"}), 401
+    d       = request.get_json(silent=True) or {}
+    message = (d.get("message") or "").strip()
+    if not message:
+        return jsonify({"error": "Message is required"}), 400
+    conn = get_db()
+    rows = query(conn, "SELECT display_name FROM neighbors WHERE id = ?", (uid,))
+    author = rows[0]["display_name"] if rows else "Anonymous"
+    execute(conn,
+        "INSERT INTO wishes (neighbor_id, author_name, message) VALUES (?, ?, ?)",
+        (neighbor_id, author, message))
+    conn.close()
+    return jsonify({"ok": True, "author_name": author, "message": message}), 201
 
 
 init_db()
