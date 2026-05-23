@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kape't Bahay Birthday Calendar</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f1f5f1;
+      min-height: 100vh;
+      color: #1a2e1f;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #2d5940, #6d28d9);
+      color: white;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 24px rgba(45,89,64,.4);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-left h1 { font-size: 1.3rem; font-weight: 800; }
+    .header-left p  { font-size: .78rem; opacity: .85; }
+    .header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+
+    .kape-stat {
+      background: rgba(255,255,255,.18);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: .78rem;
+      font-weight: 600;
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    .btn {
+      padding: 7px 15px;
+      border-radius: 10px;
+      border: none;
+      font-size: .83rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn:hover { opacity: .88; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-white  { background: white; color: #3d6b4f; }
+    .btn-ghost  { background: rgba(255,255,255,.18); color: white; }
+    .btn-main   { background: linear-gradient(135deg,#3d6b4f,#6d28d9); color: white; }
+    .btn-danger { background: #fee2e2; color: #dc2626; }
+    .btn-sm     { padding: 5px 11px; font-size: .78rem; }
+    .btn-full   { width: 100%; padding: 10px; margin-top: 12px; border-radius: 11px; }
+
+    .user-chip {
+      background: rgba(255,255,255,.2);
+      color: white;
+      padding: 5px 13px;
+      border-radius: 20px;
+      font-size: .82rem;
+      font-weight: 600;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 1120px;
+      margin: 24px auto;
+      padding: 0 18px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 22px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 4px 24px rgba(61,107,79,.09);
+    }
+    .card h3 {
+      font-size: .95rem;
+      font-weight: 700;
+      color: #3d6b4f;
+      margin-bottom: 14px;
+    }
+
+    /* ── This Month Banner ── */
+    .this-month-card {
+      background: linear-gradient(135deg, #e2efe7, #ede9fe);
+      border: none;
+    }
+    .this-month-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .tm-chip {
+      background: white;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: .8rem;
+      font-weight: 600;
+      color: #2d5940;
+      box-shadow: 0 1px 4px rgba(0,0,0,.09);
+      cursor: pointer;
+    }
+    .tm-chip:hover { background: #f0fdf4; }
+
+    /* ── Calendar ── */
+    .cal-nav {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 18px;
+    }
+    .cal-nav h2 { font-size: 1.2rem; font-weight: 700; }
+    .nav-btn {
+      background: #e8f2ec; border: none; border-radius: 10px;
+      width: 34px; height: 34px; font-size: 1rem;
+      cursor: pointer; color: #3d6b4f; transition: background .15s;
+    }
+    .nav-btn:hover { background: #c5dece; }
+
+    .weekdays {
+      display: grid; grid-template-columns: repeat(7,1fr);
+      text-align: center; font-size: .7rem; font-weight: 700;
+      color: #3d6b4f; letter-spacing: .06em; text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .days-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+
+    .day {
+      aspect-ratio: 1; border-radius: 11px; position: relative;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      padding: 4px 2px 3px; cursor: pointer;
+      transition: background .12s; font-size: .86rem; overflow: hidden;
+    }
+    .day:hover     { background: #e8f2ec; }
+    .day.empty     { cursor: default; pointer-events: none; }
+    .day.today     { background: #e8f2ec; font-weight: 700; color: #3d6b4f; }
+    .day.selected  { background: #3d6b4f !important; color: white !important; }
+
+    /* countdown ring SVG */
+    .ring-svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; overflow: visible;
+    }
+    .ring-circle {
+      fill: none; stroke-width: 3; stroke-linecap: round;
+      transform-origin: 50% 50%; transform: rotate(-90deg);
+    }
+    .ring-today { animation: pulse-ring 1.6s ease-in-out infinite; }
+    @keyframes pulse-ring { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+    /* today-birthday glow */
+    .day.bday-today {
+      box-shadow: 0 0 0 2px #3d6b4f, 0 0 12px rgba(61,107,79,.35);
+    }
+    .day.selected.bday-today { box-shadow: 0 0 0 2px #c4b5fd; }
+
+    .bday-names { display: flex; flex-direction: column; gap: 1px; width: 100%; margin-top: 2px; z-index: 1; }
+    .bday-chip {
+      font-size: .56rem; font-weight: 700; line-height: 1.3;
+      background: #e8f2ec; color: #2d5940;
+      border-radius: 3px; padding: 1px 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .bday-chip.mine  { background: #ede9fe; color: #5b21b6; }
+    .day.selected .bday-chip { background: rgba(255,255,255,.25); color: white; }
+
+    /* ── Sidebar ── */
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+    .empty-msg { color: #9ca3af; font-size: .84rem; text-align: center; padding: 10px 0; }
+
+    .bday-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 9px 0; border-bottom: 1px solid #f0f5f2;
+    }
+    .bday-item:last-of-type { border-bottom: none; }
+    .bday-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      color: white; font-weight: 800; font-size: .92rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .bday-name  { font-weight: 600; font-size: .88rem; }
+    .bday-meta  { font-size: .75rem; color: #6b7280; margin-top: 1px; }
+    .bday-note  { font-size: .76rem; color: #3d6b4f; margin-top: 2px; font-style: italic; }
+
+    .reaction-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f0fdf4; border: 1.5px solid #d4e8da;
+      border-radius: 20px; padding: 5px 14px;
+      font-size: .8rem; font-weight: 600; color: #3d6b4f;
+      cursor: pointer; transition: all .18s; margin-top: 5px;
+    }
+    .reaction-btn:hover { background: #dcfce7; border-color: #3d6b4f; transform: scale(1.04); }
+    .reaction-btn.reacted { background: #ede9fe; border-color: #6d28d9; color: #6d28d9; }
+
+    /* Upcoming */
+    .upcoming-list { max-height: 240px; overflow-y: auto; }
+    .up-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid #f0f5f2; cursor: pointer;
+    }
+    .up-item:last-child { border-bottom: none; }
+    .up-badge {
+      background: #e8f2ec; color: #3d6b4f;
+      font-size: .68rem; font-weight: 700; padding: 3px 8px;
+      border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+    }
+    .up-badge.soon { background: #ede9fe; color: #6d28d9; }
+    .up-name { font-size: .86rem; font-weight: 600; }
+    .up-sub  { font-size: .73rem; color: #6b7280; }
+
+    /* My birthday form */
+    .my-bday-card { border: 2px solid #d4e8da; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    label { display: block; font-size: .79rem; font-weight: 600; color: #374151; margin-bottom: 3px; margin-top: 10px; }
+    label:first-of-type { margin-top: 0; }
+    input, textarea, select {
+      width: 100%; padding: 8px 10px; border: 1.5px solid #d4e8da;
+      border-radius: 9px; font-size: .87rem; color: #1a2e1f;
+      transition: border-color .2s; font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none; border-color: #3d6b4f;
+      box-shadow: 0 0 0 3px rgba(61,107,79,.12);
+    }
+    textarea { resize: vertical; min-height: 56px; }
+
+    /* ── Modal ── */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(10,20,12,.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: white; border-radius: 22px; padding: 30px;
+      width: 100%; max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.22);
+      transform: translateY(20px); transition: transform .25s;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .overlay.open .modal { transform: translateY(0); }
+    .modal-title { font-size: 1.25rem; font-weight: 800; margin-bottom: 4px; color: #1a2e1f; }
+    .modal-sub   { font-size: .83rem; color: #6b7280; margin-bottom: 18px; }
+    .tabs { display: flex; margin-bottom: 18px; border-bottom: 2px solid #d4e8da; }
+    .tab {
+      flex: 1; padding: 8px; border: none; background: none;
+      font-size: .86rem; font-weight: 600; color: #9ca3af;
+      cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: color .15s;
+    }
+    .tab.active { color: #3d6b4f; border-bottom-color: #3d6b4f; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .modal-error {
+      background: #fee2e2; color: #dc2626; padding: 8px 12px;
+      border-radius: 9px; font-size: .82rem; margin-top: 10px; display: none;
+    }
+    .modal-error.show { display: block; }
+    .modal-close {
+      float: right; background: none; border: none;
+      font-size: 1.3rem; color: #9ca3af; cursor: pointer;
+    }
+    .modal-close:hover { color: #374151; }
+
+    /* ── Greeting overlay ── */
+    #greeting-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(10,20,12,.5);
+      opacity: 0; pointer-events: none; transition: opacity .3s;
+    }
+    #greeting-overlay.show { opacity: 1; pointer-events: all; }
+    .greeting-card {
+      background: white; border-radius: 28px; padding: 36px 40px;
+      text-align: center; max-width: 360px; width: 90%;
+      box-shadow: 0 24px 60px rgba(0,0,0,.25);
+      transform: scale(.85); transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    #greeting-overlay.show .greeting-card { transform: scale(1); }
+    .greeting-emoji { font-size: 3.2rem; margin-bottom: 10px; }
+    .greeting-name  { font-size: 1.5rem; font-weight: 800; color: #2d5940; }
+    .greeting-text  { font-size: .95rem; color: #4b5563; margin-top: 8px; line-height: 1.5; }
+    .greeting-close {
+      margin-top: 20px; padding: 10px 28px;
+      background: linear-gradient(135deg,#3d6b4f,#6d28d9);
+      color: white; border: none; border-radius: 12px;
+      font-weight: 700; font-size: .9rem; cursor: pointer;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 22px; right: 22px;
+      background: #3d6b4f; color: white; padding: 10px 17px;
+      border-radius: 12px; font-weight: 600; font-size: .86rem;
+      box-shadow: 0 4px 16px rgba(61,107,79,.4);
+      transform: translateY(70px); opacity: 0;
+      transition: all .3s cubic-bezier(.34,1.56,.64,1); z-index: 400;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.error { background: #ef4444; }
+
+    /* ── Mobile bottom sheet ── */
+    .sheet-overlay {
+      display: none;
+      position: fixed; inset: 0; background: rgba(0,0,0,.3);
+      z-index: 49;
+    }
+    .sheet-overlay.open { display: block; }
+    .bottom-sheet {
+      display: none;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white; border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 30px rgba(0,0,0,.15);
+      z-index: 50;
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.34,1.2,.64,1);
+      max-height: 72vh; overflow-y: auto;
+      padding: 14px 20px 28px;
+    }
+    .bottom-sheet.open { transform: translateY(0); }
+    .sheet-handle {
+      width: 40px; height: 4px; background: #d1d5db;
+      border-radius: 2px; margin: 0 auto 14px;
+    }
+
+    @media (max-width: 720px) {
+      .container { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .bottom-sheet, .sheet-overlay { display: block; }
+      .bottom-sheet { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div style="font-size:1.8rem">☕</div>
+    <div>
+      <h1>Kape't Bahay Birthday Calendar</h1>
+      <p>Tara, Kape!</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="kape-stat" id="kape-stat">☕ 0 kape't bahay</div>
+    <div id="header-auth"></div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Calendar -->
+  <div class="card">
+    <div class="cal-nav">
+      <button class="nav-btn" onclick="changeMonth(-1)">&#8592;</button>
+      <h2 id="month-label"></h2>
+      <button class="nav-btn" onclick="changeMonth(1)">&#8594;</button>
+    </div>
+    <div class="weekdays">
+      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div>
+      <div>Thu</div><div>Fri</div><div>Sat</div>
+    </div>
+    <div class="days-grid" id="days-grid"></div>
+  </div>
+
+  <!-- Desktop Sidebar -->
+  <div class="sidebar">
+    <div class="card this-month-card" id="this-month-card" style="display:none">
+      <h3 id="this-month-title">🎉 Birthdays this month</h3>
+      <div class="this-month-chips" id="this-month-chips"></div>
+    </div>
+
+    <div class="card" id="selected-panel">
+      <h3 id="selected-title">Click a date to see birthdays</h3>
+      <div id="selected-list"></div>
+    </div>
+
+    <div class="card my-bday-card" id="my-bday-section" style="display:none">
+      <h3>🎈 My Birthday</h3>
+      <form onsubmit="saveBirthday(event)">
+        <label>House / Unit #</label>
+        <input id="me-unit" type="text" placeholder="e.g. Unit 4B" required/>
+        <label>Birthday</label>
+        <div class="form-row">
+          <select id="me-month" required>
+            <option value="">Month</option>
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+          <select id="me-day" required><option value="">Day</option></select>
+        </div>
+        <label>Year of Birth (optional)</label>
+        <input id="me-year" type="number" placeholder="e.g. 1985" min="1900" max="2025"/>
+        <label>Note (optional)</label>
+        <textarea id="me-note" placeholder="e.g. Loves chocolate cake!"></textarea>
+        <button type="submit" class="btn btn-main btn-full">Save Birthday</button>
+        <button type="button" class="btn btn-danger btn-full" style="margin-top:8px" onclick="confirmDelete()">Remove My Entry</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>🗓 Upcoming Birthdays</h3>
+      <div class="upcoming-list" id="upcoming-list"><div class="empty-msg">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile bottom sheet -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+<div class="bottom-sheet" id="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <h3 id="sheet-title" style="color:#3d6b4f;font-size:.95rem;font-weight:700;margin-bottom:12px">Birthdays</h3>
+  <div id="sheet-list"></div>
+</div>
+
+<!-- Auth Modal -->
+<div class="overlay" id="auth-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">&#215;</button>
+    <div class="modal-title">☕ Eto na nga ...</div>
+    <div class="modal-sub">Ang tanda mo na, kelangan ng chismis para bumata 😄</div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('register')">New here? Register</button>
+      <button class="tab"        onclick="switchTab('login')">Already registered</button>
+    </div>
+    <div class="tab-panel active" id="tab-register">
+      <label>Your Name *</label>
+      <input id="r-name" type="text" placeholder="e.g. Maria Santos"/>
+      <label>House / Unit # *</label>
+      <input id="r-unit" type="text" placeholder="e.g. Unit 4B"/>
+      <label>Birthday *</label>
+      <div class="form-row">
+        <select id="r-month">
+          <option value="">Month</option>
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+        <select id="r-day"><option value="">Day</option></select>
+      </div>
+      <label>Year of Birth (optional)</label>
+      <input id="r-year" type="number" placeholder="e.g. 1985" min="1900" max="2025"/>
+      <label>Note (optional)</label>
+      <textarea id="r-note" placeholder="e.g. Loves chocolate cake!"></textarea>
+      <div class="modal-error" id="r-error"></div>
+      <button class="btn btn-main btn-full" onclick="doRegister()">Register & Add My Birthday</button>
+    </div>
+    <div class="tab-panel" id="tab-login">
+      <label>Your Name</label>
+      <input id="l-name" type="text" placeholder="The name you registered with"/>
+      <div class="modal-error" id="l-error"></div>
+      <button class="btn btn-main btn-full" onclick="doLogin()">Log In</button>
+    </div>
+  </div>
+</div>
+
+<!-- Greeting overlay -->
+<div id="greeting-overlay" onclick="closeGreeting()">
+  <div class="greeting-card" onclick="event.stopPropagation()">
+    <div class="greeting-emoji" id="greeting-emoji">🎂</div>
+    <div class="greeting-name"  id="greeting-name"></div>
+    <div class="greeting-text"  id="greeting-text"></div>
+    <button class="greeting-close" onclick="closeGreeting()">Salamat! 🙏</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+
+const GREETINGS = [
+  (n) => ({ e:'🎂', t:`Ay, kaarawan mo pala, ${n}! Libre kita ng kape! ☕` }),
+  (n) => ({ e:'🥳', t:`Maligayang Kaarawan, ${n}! Sana napakasaya ngayon!` }),
+  (n) => ({ e:'🎉', t:`${n}, ang tanda mo na! Pero forever young ka!` }),
+  (n) => ({ e:'🌸', t:`Taon-taon lalo kang gumaganda, ${n}!` }),
+  (n) => ({ e:'🎁', t:`Maligayang bati, ${n}! Sana maraming regalo!` }),
+  (n) => ({ e:'🍰', t:`${n}! Birthday mo?! Saan ang pagkain?!` }),
+  (n) => ({ e:'💚', t:`Ikaw talaga ${n}, nag-iisa ka sa mundo! Mahal ka namin!` }),
+  (n) => ({ e:'✨', t:`Happy birthday, ${n}! Bata ka pa rin sa puso namin!` }),
+];
+
+const AVATAR_COLORS = [
+  ['#3d6b4f','#6d28d9'],['#f472b6','#fb923c'],['#60a5fa','#34d399'],
+  ['#fbbf24','#f87171'],['#a78bfa','#f472b6'],['#34d399','#60a5fa'],
+  ['#f87171','#fbbf24'],['#6366f1','#8b5cf6'],
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let currentYear  = new Date().getFullYear();
+let currentMonth = new Date().getMonth() + 1;
+let selectedDay  = null, selectedMonth = null, selectedYear = null;
+let allBirthdays = [], me = null;
+let greetingTimer = null;
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+
+function avatarGradient(name) {
+  let h = 0;
+  for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+  const [a, b] = AVATAR_COLORS[h % AVATAR_COLORS.length];
+  return `linear-gradient(135deg,${a},${b})`;
+}
+
+// ── Countdown ring ────────────────────────────────────────────────────────────
+
+function daysUntil(month, day) {
+  const t = new Date(); t.setHours(0,0,0,0);
+  let n = new Date(t.getFullYear(), month - 1, day);
+  if (n < t) n = new Date(t.getFullYear() + 1, month - 1, day);
+  return Math.round((n - t) / 86400000);
+}
+
+function ringProps(du) {
+  const circ = 2 * Math.PI * 47;
+  let pct, color, pulse = false;
+  if (du === 0)       { pct = 1;    color = '#3d6b4f'; pulse = true; }
+  else if (du <= 7)   { pct = .72 + .28 * (1 - du/7);  color = '#6d28d9'; }
+  else if (du <= 30)  { pct = .38 + .34 * (1 - du/30); color = '#4a7c59'; }
+  else                { pct = .14; color = '#b5ceba'; }
+  return { dash: circ * pct, gap: circ * (1-pct), color, pulse };
+}
+
+// ── Confetti ──────────────────────────────────────────────────────────────────
+
+function launchConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+  canvas.width = innerWidth; canvas.height = innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const colors = ['#3d6b4f','#6d28d9','#f472b6','#fbbf24','#60a5fa','#34d399','#fb923c'];
+  const P = Array.from({length: 130}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height * -.5,
+    vx: (Math.random()-.5) * 5,
+    vy: Math.random() * 3 + 2,
+    r: Math.random() * 6 + 2,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    rot: Math.random() * 360,
+    rv: (Math.random()-.5) * 8,
+    rect: Math.random() > .5,
+  }));
+  let raf;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    P.forEach(p => {
+      p.x += p.vx; p.y += p.vy += .08; p.rot += p.rv;
+      if (p.y < canvas.height + 20) alive = true;
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, 1 - p.y / canvas.height);
+      if (p.rect) ctx.fillRect(-p.r, -p.r/2, p.r*2, p.r);
+      else { ctx.beginPath(); ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill(); }
+      ctx.restore();
+    });
+    if (alive) raf = requestAnimationFrame(draw);
+    else canvas.remove();
+  }
+  raf = requestAnimationFrame(draw);
+  setTimeout(() => { cancelAnimationFrame(raf); canvas.remove(); }, 5000);
+}
+
+// ── Tagalog greeting ──────────────────────────────────────────────────────────
+
+function showGreeting(entries) {
+  const b = entries[0];
+  const names = entries.map(e => e.display_name).join(' at ');
+  const g = GREETINGS[Math.floor(Math.random() * GREETINGS.length)](
+    entries.length > 1 ? `nina ${names}` : b.display_name
+  );
+  document.getElementById('greeting-emoji').textContent = g.e;
+  document.getElementById('greeting-name').textContent =
+    entries.length > 1 ? names : b.display_name;
+  document.getElementById('greeting-text').textContent = g.t;
+  document.getElementById('greeting-overlay').classList.add('show');
+  clearTimeout(greetingTimer);
+  greetingTimer = setTimeout(closeGreeting, 5000);
+}
+
+function closeGreeting() {
+  document.getElementById('greeting-overlay').classList.remove('show');
+  clearTimeout(greetingTimer);
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+
+async function api(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: body ? {'Content-Type':'application/json'} : {},
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+async function init() {
+  const [bdRes, meRes] = await Promise.all([
+    api('GET', '/api/birthdays'),
+    api('GET', '/api/me'),
+  ]);
+  allBirthdays = bdRes.ok ? bdRes.data : [];
+  me = meRes.ok ? meRes.data : null;
+  renderHeader();
+  render();
+
+  // auto confetti if today is someone's birthday
+  const t = new Date();
+  const todayBdays = allBirthdays.filter(b =>
+    b.month === t.getMonth()+1 && b.day === t.getDate());
+  if (todayBdays.length) {
+    setTimeout(() => { launchConfetti(); showGreeting(todayBdays); }, 800);
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+
+function render() {
+  renderCalendar();
+  renderSelectedPanel();
+  renderUpcoming();
+  renderThisMonth();
+  renderKapeStat();
+}
+
+function renderKapeStat() {
+  const n = allBirthdays.length;
+  const cups = Math.min(n, 5);
+  document.getElementById('kape-stat').textContent =
+    '☕'.repeat(cups || 1) + ` ${n} kape't bahay`;
+}
+
+function renderThisMonth() {
+  const card   = document.getElementById('this-month-card');
+  const chips  = document.getElementById('this-month-chips');
+  const title  = document.getElementById('this-month-title');
+  const today  = new Date();
+  const bdays  = allBirthdays.filter(b => b.month === currentMonth)
+                              .sort((a,b) => a.day - b.day);
+  if (!bdays.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  title.textContent  = `🎉 ${MONTHS[currentMonth-1]} birthdays`;
+  chips.innerHTML = bdays.map(b => {
+    const isToday = b.month === today.getMonth()+1 && b.day === today.getDate();
+    return `<span class="tm-chip" onclick="goToDate(${b.month},${b.day})">${isToday?'🎂 ':''}${esc(b.display_name)} · ${b.day}</span>`;
+  }).join('');
+}
+
+function renderHeader() {
+  const el = document.getElementById('header-auth');
+  if (me) {
+    el.innerHTML = `
+      <span class="user-chip">👋 Hi, ${esc(me.display_name)}!</span>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Log out</button>`;
+  } else {
+    el.innerHTML = `<button class="btn btn-white" onclick="openModal()">Add My Birthday</button>`;
+  }
+  const sec = document.getElementById('my-bday-section');
+  if (me) {
+    sec.style.display = '';
+    document.getElementById('me-unit').value  = me.unit  || '';
+    document.getElementById('me-month').value = me.month || '';
+    fillDays(document.getElementById('me-month'), document.getElementById('me-day'), document.getElementById('me-year'));
+    document.getElementById('me-day').value   = me.day   || '';
+    document.getElementById('me-year').value  = me.year  || '';
+    document.getElementById('me-note').value  = me.note  || '';
+  } else {
+    sec.style.display = 'none';
+  }
+}
+
+function renderCalendar() {
+  document.getElementById('month-label').textContent = `${MONTHS[currentMonth-1]} ${currentYear}`;
+  const grid = document.getElementById('days-grid');
+  grid.innerHTML = '';
+
+  const firstDay    = new Date(currentYear, currentMonth-1, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+  const today       = new Date();
+
+  const bdMap = {};
+  allBirthdays.filter(b => b.month === currentMonth).forEach(b => {
+    bdMap[b.day] = bdMap[b.day] || [];
+    bdMap[b.day].push(b);
+  });
+
+  for (let i = 0; i < firstDay; i++) {
+    const el = document.createElement('div');
+    el.className = 'day empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const el = document.createElement('div');
+    el.className = 'day';
+
+    const isToday = today.getFullYear()===currentYear &&
+                    today.getMonth()+1===currentMonth &&
+                    today.getDate()===d;
+    if (isToday) el.classList.add('today');
+    if (selectedDay===d && selectedMonth===currentMonth && selectedYear===currentYear)
+      el.classList.add('selected');
+
+    const dayBdays = bdMap[d] || [];
+
+    // countdown ring
+    if (dayBdays.length) {
+      const du = daysUntil(currentMonth, d);
+      const { dash, gap, color, pulse } = ringProps(du);
+      if (isToday) el.classList.add('bday-today');
+      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('viewBox','0 0 100 100');
+      svg.classList.add('ring-svg');
+      const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      circle.setAttribute('cx','50'); circle.setAttribute('cy','50');
+      circle.setAttribute('r','47');
+      circle.classList.add('ring-circle');
+      if (pulse) circle.classList.add('ring-today');
+      circle.setAttribute('stroke', color);
+      circle.setAttribute('stroke-dasharray', `${dash} ${gap}`);
+      svg.appendChild(circle);
+      el.appendChild(svg);
+    }
+
+    // day number
+    const num = document.createElement('span');
+    num.textContent = d;
+    num.style.position = 'relative'; num.style.zIndex = '1';
+    el.appendChild(num);
+
+    // name chips
+    if (dayBdays.length) {
+      const col = document.createElement('div');
+      col.className = 'bday-names';
+      dayBdays.slice(0,3).forEach(b => {
+        const chip = document.createElement('div');
+        chip.className = 'bday-chip' + (me && b.id===me.id ? ' mine' : '');
+        chip.textContent = b.display_name.split(' ')[0];
+        col.appendChild(chip);
+      });
+      if (dayBdays.length > 3) {
+        const more = document.createElement('div');
+        more.className = 'bday-chip';
+        more.textContent = `+${dayBdays.length-3}`;
+        col.appendChild(more);
+      }
+      el.appendChild(col);
+    }
+
+    el.addEventListener('click', () => selectDay(d));
+    grid.appendChild(el);
+  }
+}
+
+function selectDay(d) {
+  selectedDay = d; selectedMonth = currentMonth; selectedYear = currentYear;
+  renderCalendar();
+  renderSelectedPanel();
+
+  // show greeting if birthday
+  const entries = allBirthdays.filter(b => b.month===currentMonth && b.day===d);
+  if (entries.length) showGreeting(entries);
+
+  // mobile: open bottom sheet
+  if (window.innerWidth <= 720) openSheet(d);
+}
+
+function renderSelectedPanel() {
+  const title = document.getElementById('selected-title');
+  const list  = document.getElementById('selected-list');
+  if (!selectedDay) {
+    title.textContent = 'Click a date to see birthdays';
+    list.innerHTML = ''; return;
+  }
+  title.textContent = `${MONTHS[selectedMonth-1]} ${selectedDay}`;
+  buildBdayList(list, selectedMonth, selectedDay, selectedYear);
+}
+
+function buildBdayList(container, month, day, year) {
+  const entries = allBirthdays.filter(b => b.month===month && b.day===day);
+  if (!entries.length) {
+    container.innerHTML = '<div class="empty-msg">No birthdays on this day yet.</div>';
+    return;
+  }
+  container.innerHTML = entries.map(b => {
+    const isMine = me && b.id === me.id;
+    const age    = b.year ? `, turning ${year - b.year}` : '';
+    const reacted = sessionStorage.getItem(`reacted_${b.id}`);
+    return `
+      <div class="bday-item">
+        <div class="bday-avatar" style="background:${avatarGradient(b.display_name)}">
+          ${b.display_name.charAt(0).toUpperCase()}
+        </div>
+        <div style="flex:1">
+          <div class="bday-name">${esc(b.display_name)}${isMine?` <span style="font-size:.7rem;color:#3d6b4f">(you)</span>`:''}</div>
+          <div class="bday-meta">${esc(b.unit)}${age}</div>
+          ${b.note ? `<div class="bday-note">${esc(b.note)}</div>` : ''}
+          <button class="reaction-btn ${reacted?'reacted':''}"
+                  onclick="sendReaction(${b.id}, this)"
+                  id="rxn-${b.id}">
+            ${reacted ? '🎉' : '🎉'} ${reacted ? 'Wished!' : 'Wish Happy Birthday!'}
+            ${b.reactions ? `<span style="opacity:.7">(${b.reactions})</span>` : ''}
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Mobile sheet ──────────────────────────────────────────────────────────────
+
+function openSheet(d) {
+  const title = document.getElementById('sheet-title');
+  const list  = document.getElementById('sheet-list');
+  title.textContent = `${MONTHS[currentMonth-1]} ${d}`;
+  buildBdayList(list, currentMonth, d, currentYear);
+  document.getElementById('sheet-overlay').classList.add('open');
+  document.getElementById('bottom-sheet').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('sheet-overlay').classList.remove('open');
+  document.getElementById('bottom-sheet').classList.remove('open');
+}
+
+function renderUpcoming() {
+  const list = document.getElementById('upcoming-list');
+  if (!allBirthdays.length) {
+    list.innerHTML = '<div class="empty-msg">No birthdays added yet — be the first!</div>';
+    return;
+  }
+  const today = new Date();
+  const sorted = allBirthdays.map(b => {
+    let next = new Date(today.getFullYear(), b.month-1, b.day);
+    if (next < today) next = new Date(today.getFullYear()+1, b.month-1, b.day);
+    return { ...b, diff: Math.round((next-today)/86400000), next };
+  }).sort((a,b) => a.diff-b.diff).slice(0, 8);
+
+  list.innerHTML = sorted.map(b => {
+    const label = b.diff===0 ? 'Today! 🎉' : b.diff===1 ? 'Tomorrow!' : `in ${b.diff}d`;
+    const cls   = b.diff <= 7 ? 'up-badge soon' : 'up-badge';
+    const age   = b.year ? ` · ${b.next.getFullYear()-b.year} yrs` : '';
+    return `
+      <div class="up-item" onclick="goToDate(${b.month},${b.day})">
+        <span class="${cls}">${label}</span>
+        <div>
+          <div class="up-name">${esc(b.display_name)}</div>
+          <div class="up-sub">${esc(b.unit)} · ${MONTHS[b.month-1]} ${b.day}${age}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function goToDate(month, day) {
+  const today = new Date();
+  let year = today.getFullYear();
+  if (new Date(year, month-1, day) < today) year++;
+  currentMonth = month; currentYear = year;
+  selectDay(day);
+  renderUpcoming();
+  renderThisMonth();
+}
+
+function changeMonth(dir) {
+  currentMonth += dir;
+  if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+  if (currentMonth < 1)  { currentMonth = 12; currentYear--; }
+  renderCalendar();
+  renderThisMonth();
+}
+
+// ── Reactions ─────────────────────────────────────────────────────────────────
+
+async function sendReaction(id, btn) {
+  if (sessionStorage.getItem(`reacted_${id}`)) return;
+  sessionStorage.setItem(`reacted_${id}`, '1');
+  const res = await api('POST', `/api/reactions/${id}`);
+  if (!res.ok) return;
+  const count = res.data.count;
+  const b = allBirthdays.find(x => x.id === id);
+  if (b) b.reactions = count;
+  btn.classList.add('reacted');
+  btn.innerHTML = `🎉 Wished! <span style="opacity:.7">(${count})</span>`;
+  toast('Birthday wish sent! 🎉');
+}
+
+// ── Birthday save ─────────────────────────────────────────────────────────────
+
+async function saveBirthday(e) {
+  e.preventDefault();
+  const body = {
+    unit:  document.getElementById('me-unit').value.trim(),
+    month: parseInt(document.getElementById('me-month').value) || null,
+    day:   parseInt(document.getElementById('me-day').value)   || null,
+    year:  parseInt(document.getElementById('me-year').value)  || null,
+    note:  document.getElementById('me-note').value.trim(),
+  };
+  const res = await api('PUT', '/api/me', body);
+  if (!res.ok) return toast(res.data.error || 'Something went wrong', true);
+  const [meRes, bdRes] = await Promise.all([api('GET','/api/me'), api('GET','/api/birthdays')]);
+  me = meRes.ok ? meRes.data : me;
+  allBirthdays = bdRes.ok ? bdRes.data : allBirthdays;
+  render();
+  toast('Birthday saved! 🎂');
+}
+
+async function confirmDelete() {
+  if (!confirm('Remove your birthday entry? You can always re-register.')) return;
+  const res = await api('DELETE', '/api/me');
+  if (!res.ok) return toast('Could not remove entry', true);
+  me = null;
+  const bdRes = await api('GET', '/api/birthdays');
+  allBirthdays = bdRes.ok ? bdRes.data : [];
+  renderHeader(); render();
+  toast('Entry removed.');
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+function openModal() {
+  document.getElementById('auth-overlay').classList.add('open');
+  document.getElementById('r-name').focus();
+}
+function closeModal() {
+  document.getElementById('auth-overlay').classList.remove('open');
+  clearErrors();
+}
+document.getElementById('auth-overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) =>
+    t.classList.toggle('active', (i===0)===(tab==='register')));
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  clearErrors();
+}
+function clearErrors() {
+  ['r-error','l-error'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+  });
+}
+
+async function doRegister() {
+  const errEl = document.getElementById('r-error');
+  const body  = {
+    name:  document.getElementById('r-name').value.trim(),
+    unit:  document.getElementById('r-unit').value.trim(),
+    month: parseInt(document.getElementById('r-month').value) || null,
+    day:   parseInt(document.getElementById('r-day').value)   || null,
+    year:  parseInt(document.getElementById('r-year').value)  || null,
+    note:  document.getElementById('r-note').value.trim(),
+  };
+  const res = await api('POST', '/api/register', body);
+  if (!res.ok) {
+    errEl.textContent = res.data.error || 'Registration failed';
+    errEl.classList.add('show'); return;
+  }
+  me = res.data;
+  const bdRes = await api('GET', '/api/birthdays');
+  allBirthdays = bdRes.ok ? bdRes.data : [];
+  closeModal(); renderHeader(); render();
+  launchConfetti();
+  toast(`Welcome to Kape't Bahay, ${esc(me.display_name)}! 🎉`);
+}
+
+async function doLogin() {
+  const errEl = document.getElementById('l-error');
+  const body  = { name: document.getElementById('l-name').value.trim() };
+  const res   = await api('POST', '/api/login', body);
+  if (!res.ok) {
+    errEl.textContent = res.data.error || 'Login failed';
+    errEl.classList.add('show'); return;
+  }
+  me = res.data;
+  const bdRes = await api('GET', '/api/birthdays');
+  allBirthdays = bdRes.ok ? bdRes.data : [];
+  closeModal(); renderHeader(); render();
+  toast(`Welcome back, ${esc(me.display_name)}!`);
+}
+
+async function doLogout() {
+  await api('POST', '/api/logout');
+  me = null; renderHeader(); render();
+}
+
+// ── Day dropdowns ─────────────────────────────────────────────────────────────
+
+function fillDays(mSel, dSel, ySel) {
+  const m = parseInt(mSel.value), y = parseInt(ySel?.value) || 2000;
+  const prev = dSel.value;
+  dSel.innerHTML = '<option value="">Day</option>';
+  if (!m) return;
+  const n = new Date(y, m, 0).getDate();
+  for (let d = 1; d <= n; d++) {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    if (d == prev) o.selected = true;
+    dSel.appendChild(o);
+  }
+}
+['r-month','r-year'].forEach(id => document.getElementById(id).addEventListener('change', () =>
+  fillDays(document.getElementById('r-month'), document.getElementById('r-day'), document.getElementById('r-year'))));
+['me-month','me-year'].forEach(id => document.getElementById(id).addEventListener('change', () =>
+  fillDays(document.getElementById('me-month'), document.getElementById('me-day'), document.getElementById('me-year'))));
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+
+function toast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error' : '';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+init();
+</script>
+</body>
+</html>
