@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kape't Bahay Birthday Calendar</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>☕</text></svg>"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -339,6 +340,60 @@
       .bottom-sheet { display: block; }
     }
 
+    /* ── Welcome card ── */
+    .welcome-card {
+      max-width: 1120px;
+      margin: 14px auto 0;
+      padding: 0 18px;
+    }
+    .welcome-inner {
+      background: white;
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 4px 24px rgba(61,107,79,.09);
+      border-left: 5px solid #6d28d9;
+    }
+    .welcome-text { font-size: .88rem; color: #1a2e1f; line-height: 1.4; }
+    .welcome-text strong { color: #6d28d9; }
+    .welcome-close {
+      background: none; border: none; font-size: 1.1rem;
+      cursor: pointer; color: #9ca3af; flex-shrink: 0; padding: 2px 6px;
+    }
+    .welcome-close:hover { color: #374151; }
+
+    /* ── Add to Home Screen banner ── */
+    .aths-banner {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(135deg,#2d5940,#6d28d9);
+      color: white;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 48;
+      box-shadow: 0 -4px 20px rgba(0,0,0,.15);
+    }
+    .aths-banner p { font-size: .82rem; flex: 1; line-height: 1.4; }
+    .aths-banner strong { font-weight: 800; }
+    .aths-close {
+      background: rgba(255,255,255,.2); border: none; color: white;
+      border-radius: 8px; padding: 5px 10px; font-size: .8rem;
+      font-weight: 700; cursor: pointer; white-space: nowrap;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 24px 18px;
+      font-size: .78rem;
+      color: #9ca3af;
+    }
+
     /* ── This week banner ── */
     .week-banner {
       max-width: 1120px;
@@ -480,6 +535,13 @@
   </div>
 </header>
 
+<div class="welcome-card" id="welcome-card">
+  <div class="welcome-inner">
+    <div class="welcome-text">👋 Welcome! <strong>Add your birthday para ma'bash ka!</strong> LOL — just click <em>"Add My Birthday"</em> to join the fun.</div>
+    <button class="welcome-close" onclick="dismissWelcome()">✕</button>
+  </div>
+</div>
+
 <div class="week-banner" id="week-banner" style="display:none">
   <div class="week-banner-inner">
     <span class="week-banner-label">🎂 Coming up:</span>
@@ -608,6 +670,13 @@
     <div class="greeting-text"  id="greeting-text"></div>
     <button class="greeting-close" onclick="closeGreeting()">Salamat! 🙏</button>
   </div>
+</div>
+
+<div class="footer">Made with 💜 for Kape't Bahay</div>
+
+<div id="aths-banner" class="aths-banner" style="display:none">
+  <p>📱 <strong>Save this as an app!</strong> Tap <strong>Share → Add to Home Screen</strong> for quick access anytime.</p>
+  <button class="aths-close" onclick="dismissAths()">Got it!</button>
 </div>
 
 <div id="toast"></div>
@@ -1256,6 +1325,30 @@ function fillDays(mSel, dSel, ySel) {
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
 
+function dismissWelcome() {
+  localStorage.setItem('welcomed', '1');
+  document.getElementById('welcome-card').style.display = 'none';
+}
+
+function dismissAths() {
+  localStorage.setItem('aths', '1');
+  document.getElementById('aths-banner').style.display = 'none';
+}
+
+function initBanners() {
+  if (localStorage.getItem('welcomed')) {
+    document.getElementById('welcome-card').style.display = 'none';
+  }
+  const isStandalone = window.navigator.standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches;
+  const isMobile = window.innerWidth <= 720;
+  if (isMobile && !isStandalone && !localStorage.getItem('aths')) {
+    setTimeout(() => {
+      document.getElementById('aths-banner').style.display = 'flex';
+    }, 4000);
+  }
+}
+
 function toast(msg, isError) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1270,6 +1363,7 @@ function esc(str) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+initBanners();
 init();
 </script>
 </body>
