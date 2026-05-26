@@ -531,6 +531,7 @@
   </div>
   <div class="header-right">
     <div class="kape-stat" id="kape-stat">☕ 0 kape't bahay</div>
+
     <div id="header-auth"></div>
   </div>
 </header>
@@ -850,9 +851,7 @@ function render() {
 
 function renderKapeStat() {
   const n = allBirthdays.length;
-  const cups = Math.min(n, 5);
-  document.getElementById('kape-stat').textContent =
-    '☕'.repeat(cups || 1) + ` ${n} kape't bahay`;
+  document.getElementById('kape-stat').textContent = `☕ ${n} kape't bahay`;
 }
 
 function renderThisMonth() {
