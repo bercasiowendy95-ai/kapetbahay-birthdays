@@ -581,7 +581,7 @@
       <h3>🎈 My Birthday</h3>
       <form onsubmit="saveBirthday(event)">
         <label>House / Unit #</label>
-        <input id="me-unit" type="text" placeholder="e.g. Unit 4B" required/>
+        <input id="me-unit" type="text" placeholder="e.g. Block 4 Lot 28" required onblur="this.value=normalizeUnit(this.value)"/>
         <label>Birthday</label>
         <div class="form-row">
           <select id="me-month" required>
@@ -633,7 +633,7 @@
       <label>Your Name *</label>
       <input id="r-name" type="text" placeholder="e.g. Maria Santos"/>
       <label>House / Unit # *</label>
-      <input id="r-unit" type="text" placeholder="e.g. Unit 4B"/>
+      <input id="r-unit" type="text" placeholder="e.g. Block 4 Lot 28" onblur="this.value=normalizeUnit(this.value)"/>
       <label>Birthday *</label>
       <div class="form-row">
         <select id="r-month">
@@ -1323,6 +1323,31 @@ function fillDays(mSel, dSel, ySel) {
   fillDays(document.getElementById('me-month'), document.getElementById('me-day'), document.getElementById('me-year'))));
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
+
+// ── Unit normalizer ───────────────────────────────────────────────────────────
+
+function normalizeUnit(val) {
+  val = val.trim();
+  if (!val) return val;
+  let m;
+  // Already correct: "Block 4 Lot 28" (any case)
+  m = val.match(/^block\s+(\d+)\s+lot\s+(\d+)$/i);
+  if (m) return `Block ${m[1]} Lot ${m[2]}`;
+  // "BLK 4 LOT 28", "BLK4LOT28", "BLOCK4LOT28"
+  m = val.match(/(?:blk|block)\s*(\d+)\s*(?:lot|lt?)\s*(\d+)/i);
+  if (m) return `Block ${m[1]} Lot ${m[2]}`;
+  // "B4 L28", "B 4 L 28"
+  m = val.match(/^b\s*(\d+)\s+l\s*(\d+)$/i);
+  if (m) return `Block ${m[1]} Lot ${m[2]}`;
+  // "4/28", "4-28", "4.28"
+  m = val.match(/^(\d+)\s*[\/\-\.]\s*(\d+)$/);
+  if (m) return `Block ${m[1]} Lot ${m[2]}`;
+  // Two numbers separated by space "4 28"
+  m = val.match(/^(\d+)\s+(\d+)$/);
+  if (m) return `Block ${m[1]} Lot ${m[2]}`;
+  // Return as-is if nothing matches
+  return val;
+}
 
 function dismissWelcome() {
   localStorage.setItem('welcomed', '1');
